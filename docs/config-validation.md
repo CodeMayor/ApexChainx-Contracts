@@ -33,12 +33,15 @@ The SLA Calculator contract validates all configuration updates to prevent admin
 
 ## Supported Severities
 
-The contract only supports four severity levels:
+The contract supports exactly four severity levels, each with distinct
+validation parameters:
 
-- `critical` - Highest priority incidents
-- `high` - Important incidents  
-- `medium` - Standard incidents
-- `low` - Low priority incidents
+| Severity | Priority | Typical Response Window | Default Threshold |
+|----------|----------|------------------------|------------------|
+| `critical` | 🔴 Highest | < 15 minutes | 15 min |
+| `high` | 🟠 Important | < 30 minutes | 30 min |
+| `medium` | 🟡 Standard | < 60 minutes | 60 min |
+| `low` | 🟢 Low priority | < 120 minutes | 120 min |
 
 ## Validation Rules
 
