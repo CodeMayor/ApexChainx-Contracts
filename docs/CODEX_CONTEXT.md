@@ -48,57 +48,70 @@ All interactions go through the backend bridge.
 
 ## Core Contracts
 
-### 1. SLA Calculator
+### 1. SLA Calculator (Production-Ready)
 
-Responsible for:
+**Status:** ✅ Implemented and tested
 
-- calculating SLA results (penalty or reward)
-- returning deterministic results
-- storing configuration
+The SLA calculator is the primary contract in this repository. It handles
+deterministic SLA computation, configuration management, and event emission.
 
-Key functions:
+#### Responsibilities
 
-- initialize
-- calculate_sla
-- execute_payment
-- get_config
-- update_config
+| Responsibility | Details |
+|---------------|---------|
+| SLA Computation | Calculate penalty or reward based on severity and MTTR |
+| Configuration | Store and manage severity-based SLA parameters |
+| Governance | Admin/operator role management with two-step transfers |
+| Events | Versioned lifecycle events for backend consumers |
+| History | On-chain calculation history with pruning |
 
-Important:
+#### Key Functions
 
-- must be deterministic
-- must not depend on external state
-- must match backend SLA logic exactly
+| Function | Auth | Purpose |
+|----------|------|---------|
+| `initialize` | — | One-time setup with admin/operator roles |
+| `calculate_sla` | Operator | Full SLA computation (mutating) |
+| `calculate_sla_view` | Public | Read-only SLA simulation |
+| `set_config` | Admin | Update severity configuration |
+| `get_config_snapshot` | Public | Ordered config export for backend |
 
----
+#### Critical Constraints
 
-### 2. Payment Escrow
-
-Responsible for:
-
-- locking funds
-- releasing funds on conditions
-- handling refunds
-
-Key functions:
-
-- create_escrow
-- release_escrow
-- refund_escrow
+- ✅ Deterministic — same inputs always produce the same output
+- ✅ Self-contained — no external state dependencies
+- ✅ Backend-parity — must match backend SLA logic exactly
 
 ---
 
-### 3. Multi-Party Settlement
+### 2. Payment Escrow (Planned)
 
-Responsible for:
+**Status:** 📋 Not yet implemented
 
-- splitting payments between parties
-- handling shared outage costs
+Future contract for locking and conditionally releasing Stellar token payments
+based on SLA results.
 
-Key functions:
+#### Planned Responsibilities
 
-- create_settlement
-- execute_settlement
+| Operation | Description |
+|-----------|-------------|
+| `create_escrow` | Lock funds in escrow with SLA conditions |
+| `release_escrow` | Release funds when SLA conditions are met |
+| `refund_escrow` | Return funds when SLA conditions are violated |
+
+---
+
+### 3. Multi-Party Settlement (Planned)
+
+**Status:** 📋 Not yet implemented
+
+Future contract for splitting shared outage costs between multiple parties.
+
+#### Planned Responsibilities
+
+| Operation | Description |
+|-----------|-------------|
+| `create_settlement` | Initiate a multi-party cost split |
+| `execute_settlement` | Process and distribute payments |
 
 ---
 
