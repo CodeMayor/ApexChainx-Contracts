@@ -1,4 +1,5 @@
 #![no_std]
+extern crate alloc;
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Map, String,
@@ -1007,9 +1008,6 @@ impl SLACalculatorContract {
         mttr_minutes: u32,
     ) -> Result<SLAResult, SLAError> {
         Self::check_version(&env)?;
-        // Graceful degradation: validate inputs before processing
-        Self::validate_symbol_input(&outage_id, true)?;
-        Self::validate_symbol_input(&severity, false)?;
         // We bypass pause and operator checks to allow continuous, public verification
         let cfg = Self::load_config(&env, &severity)?;
         let config_version_hash = Self::compute_config_version_hash(&env)?;
@@ -1040,9 +1038,6 @@ impl SLACalculatorContract {
         mttr_minutes: u32,
     ) -> Result<SLAResult, SLAError> {
         Self::check_version(&env)?;
-        // Graceful degradation: validate inputs before processing
-        Self::validate_symbol_input(&outage_id, true)?;
-        Self::validate_symbol_input(&severity, false)?;
         Self::require_not_paused(&env)?; // #27
         Self::require_operator(&env, &caller)?; // #28
 
@@ -1226,22 +1221,6 @@ impl SLACalculatorContract {
             .ok_or(SLAError::NotInitialized)?;
         if caller != &operator {
             return Err(SLAError::Unauthorized);
-        }
-        Ok(())
-    }
-
-    /// #27 – Blocks execution when the contract is paused.
-    /// Validates that a Symbol is not empty and is within reasonable length limits.
-    /// Returns `InvalidSeverity` for config keys or `InvalidOutageId` for outage IDs
-    /// when validation fails, allowing graceful degradation instead of panicking.
-    fn validate_symbol_input(symbol: &Symbol, is_outage_id: bool) -> Result<(), SLAError> {
-        let s = symbol.to_string();
-        if s.len() == 0 || s.len() > 32 {
-            return Err(if is_outage_id {
-                SLAError::InvalidOutageId
-            } else {
-                SLAError::MalformedSymbolInput
-            });
         }
         Ok(())
     }

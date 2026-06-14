@@ -128,6 +128,7 @@ pub fn current_event_version() -> Symbol {
 
 #[cfg(test)]
 mod tests {
+    use alloc::format;
     use super::*;
     use soroban_sdk::Env;
 

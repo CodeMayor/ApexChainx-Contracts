@@ -22,6 +22,8 @@
 
 #[cfg(test)]
 mod coordination_harness_tests {
+    use alloc::format;
+    use soroban_sdk::testutils::Address as _;
     use soroban_sdk::{symbol_short, Address, Env, Symbol, Vec};
 
     use crate::cross_contract_safety::{

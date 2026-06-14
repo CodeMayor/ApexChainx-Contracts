@@ -29,7 +29,7 @@
 //! let result = safety.finalize()?; // rolls back on error
 //! ```
 
-use soroban_sdk::{Env, Symbol, TryFromVal, TryIntoVal, Val, Vec};
+use soroban_sdk::{contracttype, Env, Symbol, Val, Vec};
 
 /// Status of a cross-contract call.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -48,7 +48,7 @@ pub enum CrossContractCallStatus {
 }
 
 /// Wraps the result of a cross-contract call with safety metadata.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct SafeCallResult {
     /// The status of the call.
     pub status: CrossContractCallStatus,
@@ -64,7 +64,8 @@ pub struct SafeCallResult {
 /// we store a `compensation_tag` (a Symbol identifying the compensation
 /// logic) and the `args` that were originally passed so the caller can
 /// re-invoke with reversed semantics.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracttype]
+#[derive(Clone, Debug)]
 pub struct CompensationAction {
     /// A tag identifying what kind of compensation to apply.
     /// E.g., "unlock_funds", "reverse_settle", "unpause_escrow".
@@ -84,20 +85,23 @@ pub fn safe_invoke_contract(
     args: &[Val],
 ) -> SafeCallResult {
     let args_vec = Vec::from_slice(env, args);
-    match env.try_invoke_contract(contract_id, function_name, args_vec) {
-        Ok(val) => SafeCallResult {
+    let result = env.try_invoke_contract::<Val, Val>(contract_id, function_name, args_vec);
+    match result {
+        Ok(Ok(val)) => SafeCallResult {
             status: CrossContractCallStatus::Success,
             raw_output: val,
             error_symbol: None,
         },
-        Err(_err_val) => {
-            // Attempt to decode the error – in Soroban, errors from
-            // invoked contracts arrive as ContractError Vals.
-            let error_symbol = Symbol::new(env, "CROSS_CONTRACT_FAILURE");
+        Ok(Err(_err_val)) => SafeCallResult {
+            status: CrossContractCallStatus::RecoverableError,
+            raw_output: Val::from(false),
+            error_symbol: Some(Symbol::new(env, "CROSS_CONTRACT_FAILURE")),
+        },
+        Err(_err) => {
             SafeCallResult {
                 status: CrossContractCallStatus::FatalError,
-                raw_output: Val::from((&env, ())),
-                error_symbol: Some(error_symbol),
+                raw_output: Val::from(false),
+                error_symbol: Some(Symbol::new(env, "CROSS_CONTRACT_FAILURE")),
             }
         }
     }
@@ -114,7 +118,7 @@ pub fn requires_rollback(status: CrossContractCallStatus) -> bool {
 /// are compensated in reverse order.
 pub struct CrossContractSafety {
     /// Stack of compensation actions registered for each successful call.
-    compensation_stack: Vec<(Symbol, CompensationAction)>,
+    pub(crate) compensation_stack: Vec<(Symbol, CompensationAction)>,
 }
 
 impl CrossContractSafety {
@@ -192,6 +196,7 @@ pub const FN_CANCEL_SETTLEMENT: Symbol = soroban_sdk::symbol_short!("can_setl");
 #[cfg(test)]
 mod tests {
     use super::*;
+    use soroban_sdk::testutils::Address as _;
     use soroban_sdk::{symbol_short, Address, Env};
 
     #[test]
@@ -303,7 +308,7 @@ mod tests {
         let env = Env::default();
         let result = SafeCallResult {
             status: CrossContractCallStatus::Success,
-            raw_output: Val::from((&env, true)),
+            raw_output: Val::from(true),
             error_symbol: None,
         };
         assert_eq!(result.status, CrossContractCallStatus::Success);

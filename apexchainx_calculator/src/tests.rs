@@ -1,5 +1,6 @@
 #![cfg(test)]
 
+use alloc::format;
 use super::*;
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::testutils::Events as _;
@@ -5567,6 +5568,9 @@ fn test_no_result_has_reward_type_with_non_positive_amount() {
                 "reward payment_type must always have positive amount"
             );
         }
+    }
+}
+
 // Issue #254 – Invariant checks: config bounds and payout ceilings
 // ============================================================
 
@@ -6010,6 +6014,8 @@ fn test_exclusivity_at_exact_threshold_boundary_is_met() {
     assert_eq!(result.status, symbol_short!("met"));
     assert_eq!(result.payment_type, symbol_short!("rew"));
     assert!(result.amount > 0);
+}
+
 fn test_257_result_schema_fields_are_stable() {
     // get_result_schema must return the expected symbol constants.
     let (_env, client, _actors) = setup();
