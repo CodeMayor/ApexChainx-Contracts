@@ -1,6 +1,31 @@
 # Configuration Validation Rules
 
-This document outlines the validation rules enforced by the `set_config` function in the SLA Calculator contract to ensure safe and meaningful configuration parameters.
+> **Reference:** Validation rules enforced by the `set_config` function in the
+> `apexchainx_calculator` contract, designed to prevent admin-side misuse and
+> ensure runtime safety.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Supported Severities](#supported-severities)
+- [Validation Rules](#validation-rules)
+- [Error Handling](#error-handling)
+- [Default Configuration Values](#default-configuration-values)
+- [Best Practices](#best-practices)
+- [Examples](#examples)
+- [Implementation Notes](#implementation-notes)
+
+---
+
+## Overview
+
+The `apexchainx_calculator` contract validates all configuration updates to
+prevent admin-side misuse and unexpected runtime behavior. Invalid configuration
+writes fail deterministically with specific error codes, ensuring that:
+
+1. No partial state changes occur — validation runs before any storage writes
+2. Error codes are specific — each validation failure maps to a unique error
+3. Behavior is deterministic — same inputs always produce same outcome
 
 ## Overview
 
