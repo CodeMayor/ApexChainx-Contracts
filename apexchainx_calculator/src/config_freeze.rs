@@ -1,15 +1,49 @@
+//! Configuration freeze/unfreeze mechanism for emergency lock-down.
+//!
+//! This module provides a config freeze mechanism that can be used to
+//! temporarily prevent configuration changes during critical operations.
+//! When the config is frozen, `set_config` calls are blocked, ensuring
+//! that SLA parameters remain stable during audit periods or incident
+//! response.
+//!
+//! # State Machine
+//!
+//! ```text
+//!         freeze_config()
+//!   ┌─────────────────────────┐
+//!   │                         ▼
+//! ┌──────────┐         ┌──────────┐
+//! │ Thawed   │         │ Frozen   │
+//! └──────────┘         └──────────┘
+//!   ▲                         │
+//!   └─────────────────────────┘
+//!         unfreeze_config()
+//! ```
+//!
+//! # Default State
+//!
+//! Config starts in the **thawed** state after initialization. Freezing is
+//! an explicit admin action, not the default.
+
 use soroban_sdk::{symbol_short, Env, Symbol};
 
+/// On-chain key for the config freeze boolean flag.
 const FREEZE_KEY: Symbol = symbol_short!("FREEZE");
 
+/// Freezes the configuration, blocking further config updates.
+/// After calling this, `set_config` will reject changes.
 pub fn freeze_config(env: &Env) {
     env.storage().instance().set(&FREEZE_KEY, &true);
 }
 
+/// Unfreezes the configuration, re-allowing config updates.
+/// Restores normal operation after a freeze.
 pub fn unfreeze_config(env: &Env) {
     env.storage().instance().set(&FREEZE_KEY, &false);
 }
 
+/// Returns `true` if the configuration is currently frozen.
+/// Defaults to `false` (thawed) if never explicitly set.
 pub fn is_config_frozen(env: &Env) -> bool {
     env.storage()
         .instance()
