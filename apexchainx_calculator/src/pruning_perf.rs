@@ -1,3 +1,25 @@
+//! History pruning performance and correctness tests.
+//!
+//! This module tests the history pruning mechanism for correctness under
+//! various load conditions and verifies that pruning operations behave
+//! deterministically regardless of history size.
+//!
+//! # Test Scenarios
+//!
+//! | Test | Description |
+//! |------|-------------|
+//! | `test_prune_retains_n_most_recent` | Verifies that pruning to N retains at least N most recent entries |
+//! | `test_prune_large_history_does_not_panic` | Ensures pruning 100+ entries doesn't cause runtime errors |
+//! | `test_prune_to_zero_retains_nothing` | Tests boundary: pruning with keep=0 |
+//! | `test_pruning_mixed_chronology_sequence_is_stable` | Verifies deterministic behavior with interleaved prune/calculate cycles |
+//! | `test_calculate_sla_cost_regression_baseline_smoke` | Smoke test for gas cost regression detection |
+//!
+//! # Performance Notes
+//!
+//! - Pruning iterates over the full history to rebuild the retained list
+//! - History size should be bounded by MAX_HISTORY_SIZE (1000)
+//! - Performance degrades linearly with history size (O(n))
+
 #[cfg(test)]
 mod pruning_perf_tests {
     use soroban_sdk::{symbol_short, testutils::Address as _, Address, Env};
